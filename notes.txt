@@ -1,0 +1,6 @@
+Notes of initial thoughts, outlay and workfow of the task.
+1. Process the arguments list - directives => continue/stop, process according the arguments provided.
+2. Read and process the csv file, format data. funtion getData(); (Possibly process data splitting into valid and invalid records, e.g. invalid email format, ready for STDout or database insert)
+3. Connect to database and create table. functions connectDB(Dbname, user, pasword, host); createTable(tablename);
+4. Insert records into the DB table "users". inserUsers(users);
+5. Display invalid records.
