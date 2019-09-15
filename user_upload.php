@@ -9,7 +9,7 @@
  * Help/directives for user_upload.ph
  * --file [csv name] - the name of the csv file to be parsed
  * --create_table - this will cause the MuSQL users table to be build (and no further action will be taken)
- * --dry_run - this will be used with the --file directive... not data will be added to the database
+ * --dry_run - this will be used with the --file directive... test run no data will be added to the database
  * --help - output the directives with details
  * -u - MySQL username
  * -p - MySQL password
@@ -46,7 +46,8 @@ $options = getopt($shortoptions, $longoptions);
 //Catch the --help option, will ignore any other option and show the directives help
 if(array_key_exists(OPTIONHELP, $options)){
     //TODO: Implement the Help output
-    echo "Print help";
+    //echo "Print help";
+    printHelp();
     exit(1);
 }
 //Catch the --create_table option, this will ignore any other options apart help and create the table
@@ -95,4 +96,23 @@ function validate_option($opt){
         echo "Value not supplied: Exit";
         //exit(1);
     }
+}
+function printHelp(){
+    echo "\n";
+    $mask = "%-6s %-40s\n";
+    echo sprintf($mask, "Usage:", "user_upload.php --help");
+    echo sprintf($mask, "", "user_upload.php --create_table");
+    echo sprintf($mask, "", "user_upload.php --file [csv name] -u [user] -p [password] -h [host]");
+    echo sprintf($mask, "", "user_upload.php --file [csv name] -u [user] -p [password] -h [host] --dry_run");
+    $mask = "%1s %-17s %-40s\n";
+    echo "\n";
+    echo sprintf($mask, "", "--file [csv name]", "The name of the csv file to be parsed");
+    echo sprintf($mask, "", "--create_table", "This will cause the MySQL users table to be build");
+    echo sprintf($mask, "", "", "(and no further action will be taken)");
+    echo sprintf($mask, "", "--dry_run", "this will be used with the --file directive");
+    echo sprintf($mask, "", "", "test run and no data will be added to the database");
+    echo sprintf($mask, "", "--help", "Shows this help file");
+    echo sprintf($mask, "", "-u", "MySQL user name");
+    echo sprintf($mask, "", "-p", "MySQL user password");
+    echo sprintf($mask, "", "-h", "MySQL host name");
 }
