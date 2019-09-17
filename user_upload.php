@@ -34,6 +34,9 @@ $dbHost = "";
 $dbName = "dbusers";
 $tableName = "users";
 $dbConnection;
+$dbRecords = "";
+$dbRejets = "";
+$scvData = "";
 //Create variable/array for the directives/options where ':' donates a required value with the option
 $shortoptions = "";
 $shortoptions .= "u:";
@@ -155,9 +158,53 @@ function validateUserDetails($username, $password, $hostname){
     return $validated;
 }
 //read in the csv file and process the data.
-function getData($filname){
-    echo "Reading now the data: " . $filename;
+/* The csv format must have header files which will be used to count the columns
+ * and are further ignored when processing the user data. 
+ * The deliminator must be a coma, ",".
+ */
+function getData($filename){
+    if (file_exists($filename) && ($scvData = file($filename))!==false ) {
+        $scvData = processCsv('users.csv');
+        $scvData[0] = chop($scvData[0]);
+        $countRow = count($scvData);
+        $countCol = count($scvData[0]);
+        for($a=1; $a<$countRow; $a++) {
+            $firstname = addslashes(trim(ucfirst(strtolower($scvData[$a][0]))));
+            $lastname = addslashes(trim(ucfirst(strtolower($scvData[$a][1]))));
+            $email = addslashes(trim(strtolower($scvData[$a][2])));
+            $email = addslashes(filter_var($email, FILTER_SANITIZE_EMAIL));
+            if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $dbrecords = $dbrecords . "('" . $firstname . "', '" . $lastname . "', '" . $email . "'),";
+            } else {
+                $dbrejets = $dbrejets . $firstname . "," . $lastname . "," . $email . "\r\n";
+            }
+        }
+    }else{
+        echo "Please provide a valid file name and path. \nThe file could not be found or could not open the file.";
+    }
+    fclose($scvData);
+    echo "\nEnd of getData.\n\n";
+    echo "Records: " . $dbrecords;
+    echo "\n\nRejets: " . $dbrejets;
 }
+//initial process of the user data to put all data into arrays.
+function processCsv($url) {
+    $deliminator = ",";
+    $csvdata = file($url);
+    $csvdata[0] = chop($csvdata[0]);
+    $headerdata = explode($deliminator,$csvdata[0]);
+    $headercount = count($headerdata);
+    $i=0;
+    foreach($csvdata as $item) {
+        $item = chop($item);
+            $csv_data = explode($deliminator,$item);
+            for ($y=0; $y<$headercount; $y++) {
+                $result[$i][$y] = $csv_data[$y];
+            }
+        $i++;
+    }
+    return $result;
+ }
 function printHelp(){
     echo "\n";
     $mask = "%-6s %-40s\n";
