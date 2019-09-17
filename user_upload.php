@@ -14,6 +14,8 @@
  * -u - MySQL username
  * -p - MySQL password
  * -h - MySQL host name
+ * -d - MySQL database name - optional, default is 'dbusers'
+ * Whats up
 */
 $directivesHelp =  "TBA";
 //Create constants for long options for multiple use.
@@ -27,14 +29,18 @@ $issetHelp = false;
 $issetCreateTable = false;
 $issetDryRun = false;
 $fileName = "";
-$db_user = "";
-$db_password = "";
-$db_host = "";
+$dbUser = "";
+$dbPassword = "";
+$dbHost = "";
+$dbName = "dbusers";
+$tableName = "users";
+$dbConnection;
 //Create variable/array for the directives/options where ':' donates a required value with the option
 $shortoptions = "";
 $shortoptions .= "u:";
 $shortoptions .= "p:";
 $shortoptions .= "h:";
+$shortoptions .= "d:";
 //
 $longoptions  = array(
     "file:",
@@ -43,65 +49,115 @@ $longoptions  = array(
     "help"
 );
 $options = getopt($shortoptions, $longoptions);
+//Process the short options
+foreach(array_keys($options) as $option) switch ($option){
+    case 'u':
+        $dbUser = $options['u'];
+        //echo $dbUser;
+        break;
+    case 'p':
+        $dbPassword = $options['p'];
+        //echo $dbPassword;
+        break;
+    case 'h':
+        $dbHost = $options['h'];
+        //echo $dbHost;
+        break;
+    case 'd':
+        $dbName = $options['d'];
+        //echo $dbName;
+        break;
+    default:
+        //echo "Default switch";
+}
 //Catch the --help option, will ignore any other option and show the directives help
 if(array_key_exists(OPTIONHELP, $options)){
-    //TODO: Implement the Help output
-    //echo "Print help";
     printHelp();
     exit(1);
 }
 //Catch the --create_table option, this will ignore any other options apart help and create the table
 if(array_key_exists(OPTIONCREATETABLE, $options)){
-    echo "Create the DB table 'users' and nothing else";
-    //createTable/createUsersTable();
+    $issetCreateTable = true;
+    //echo "Create the DB table 'users' and nothing else";
+    createUsersTable($dbName, $tableName, $dbUser, $dbPassword, $dbHost);
     exit(1);
 }
 //Catch the --dry run option and set the variable switch
 if(array_key_exists(OPTIONDRYRUN, $options)){
     $issetDryRun = true;
-    echo "Run script without adding data to DB";
+    //echo "Run script without adding data to DB";
 }
 //Catch the --dry run option and set the variable switch
 if(array_key_exists(OPTIONFILE, $options)){
     $fileName = $options[OPTIONFILE];
-    echo "Read the file: " . $fileName;
+    //echo "Read the file: " . $fileName;
 }
-//Process the short options
-foreach(array_keys($options) as $option) switch ($option){
-    case 'u':
-        $db_user = $options['u'];
-        echo $db_user;
-        break;
-    case 'p':
-        $db_password = $options['p'];
-        echo $db_password;
-        break;
-    case 'h':
-        $db_host = $options['h'];
-        echo $db_host;
-        break;
-    default:
-        echo "Default switch";
-}
-echo "\r\n=======End options=============\r\n";
-echo "Dry Run: " . $issetDryRun;
-//TODO:: Implement the validation of the imput options
-function validate_option($opt){
-    //Can't do the validation here, value is required and will not 
-    //fall through here as the option is not picked up.
-    //Validation will need to be done after all options have been read in.
-    if(is_string($opt) && strlen($opt) > 0){
-        echo $opt . ": validated";
-    }else{
-        echo "Value not supplied: Exit";
-        //exit(1);
+//Check if a specific table exits and rebuilt the table if required
+function createUsersTable($dbname, $username, $password, $hostname){
+    //
+    if(validateUserDetails($username, $password, $hostname)){
+        //if(connectToDb($dbname, $username, $password, $hostname)){
+            createTable($dbname, $username, $password, $hostname);
+            echo "Now, create the table.";
+       //}
     }
+}
+//Create the users tabel if the Db connection is successful
+function createTable($dbname, $tablename, $username, $password, $hostname){
+    $dbConnection = mysqli_connect($hostname, $username, $password, $dbname);
+    if (!$dbConnection) {
+        die("Connection failed: " . mysqli_connect_error());
+        return false;
+    }else{
+   
+        $sql = "CREATE TABLE " . $tablename . " (
+            id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            firstname VARCHAR(30) NOT NULL,
+            surname VARCHAR(30) NOT NULL,
+            email VARCHAR(50) UNIQUE,
+            reg_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )";
+            
+            if (mysqli_query($dbConnection, $sql)) {
+                echo "Table " .$tablename . " created successfully.";
+            } else {
+                echo "Error creating table: " . mysqli_error($dbConnection);
+                if(mysqli_errno($dbConnection) == 1050){
+                    echo "\nWould you like to rebuild the table?\n";
+                    echo "You will loose all data:  Type 'y' to rebuild: ";
+                    $handle = fopen ("php://stdin","r");
+                    $line = fgets($handle);
+                    if(trim($line) != 'y'){
+                        echo "Aborting creating the table!\n";
+                        exit(1);
+                    }
+                    //Drop the table and create a new table
+                    $sql_drop_table = "DROP TABLE IF EXISTS " . $tablename;
+                    if (mysqli_query($dbConnection, $sql_drop_table)) {
+                        //success
+                        echo "The table has been rebuild.";
+                    }else{
+                        echo "Something went wrong, could not drop table.";
+                    }
+                }
+            }
+    }
+    $dbConnection.close();
+}
+//Validate the db user details input
+function validateUserDetails($username, $password, $hostname){
+    $validated = true;
+    if(empty($username) || empty($password) || empty($hostname)){
+        echo "Please provide the correct database user and host information.";
+        $validated = false;
+    }
+    return $validated;
 }
 function printHelp(){
     echo "\n";
     $mask = "%-6s %-40s\n";
     echo sprintf($mask, "Usage:", "user_upload.php --help");
-    echo sprintf($mask, "", "user_upload.php --create_table");
+    echo sprintf($mask, "", "user_upload.php --create_table -u [user] -p [password] -h [host]");
     echo sprintf($mask, "", "user_upload.php --file [csv name] -u [user] -p [password] -h [host]");
     echo sprintf($mask, "", "user_upload.php --file [csv name] -u [user] -p [password] -h [host] --dry_run");
     $mask = "%1s %-17s %-40s\n";
@@ -115,4 +171,5 @@ function printHelp(){
     echo sprintf($mask, "", "-u", "MySQL user name");
     echo sprintf($mask, "", "-p", "MySQL user password");
     echo sprintf($mask, "", "-h", "MySQL host name");
+    echo sprintf($mask, "", "-d", "MySQL database name - optional, default is 'dbusers'");
 }

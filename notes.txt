@@ -4,3 +4,5 @@ Notes of initial thoughts, outlay and workfow of the task.
 3. Connect to database and create table. functions connectDB(Dbname, user, pasword, host); createTable(tablename);
 4. Insert records into the DB table "users". inserUsers(users);
 5. Display invalid records.
+
+I have made the desition to add another directive/argument for the database name. This means any database can be used without having to change the source code before running the script.
