@@ -15,7 +15,6 @@
  * -p - MySQL password
  * -h - MySQL host name
  * -d - MySQL database name - optional, default is 'dbusers'
- * Whats up
 */
 $directivesHelp =  "TBA";
 //Create constants for long options for multiple use.
@@ -80,26 +79,28 @@ if(array_key_exists(OPTIONCREATETABLE, $options)){
     $issetCreateTable = true;
     //echo "Create the DB table 'users' and nothing else";
     createUsersTable($dbName, $tableName, $dbUser, $dbPassword, $dbHost);
-    exit(1);
+    if(!array_key_exists(OPTIONFILE, $options))exit(1);
 }
 //Catch the --dry run option and set the variable switch
 if(array_key_exists(OPTIONDRYRUN, $options)){
     $issetDryRun = true;
-    //echo "Run script without adding data to DB";
+    //Run script without adding data to DB";
 }
 //Catch the --dry run option and set the variable switch
 if(array_key_exists(OPTIONFILE, $options)){
     $fileName = $options[OPTIONFILE];
-    //echo "Read the file: " . $fileName;
 }
+if(validateUserDetails($dbUser, $dbPassword, $dbHost) && !empty($fileName)){
+    getData($fileName);
+}
+
+
+//--Funtions------------------------------------------------------------------------
 //Check if a specific table exits and rebuilt the table if required
 function createUsersTable($dbname, $username, $password, $hostname){
     //
     if(validateUserDetails($username, $password, $hostname)){
-        //if(connectToDb($dbname, $username, $password, $hostname)){
-            createTable($dbname, $username, $password, $hostname);
-            echo "Now, create the table.";
-       //}
+        createTable($dbname, $username, $password, $hostname);
     }
 }
 //Create the users tabel if the Db connection is successful
@@ -135,14 +136,14 @@ function createTable($dbname, $tablename, $username, $password, $hostname){
                     $sql_drop_table = "DROP TABLE IF EXISTS " . $tablename;
                     if (mysqli_query($dbConnection, $sql_drop_table)) {
                         //success
-                        echo "The table has been rebuild.";
+                        echo "The table has been rebuild. ";
                     }else{
-                        echo "Something went wrong, could not drop table.";
+                        echo "Something went wrong, could not drop table. ";
                     }
                 }
             }
     }
-    $dbConnection.close();
+    mysqli_close($dbConnection);
 }
 //Validate the db user details input
 function validateUserDetails($username, $password, $hostname){
@@ -152,6 +153,10 @@ function validateUserDetails($username, $password, $hostname){
         $validated = false;
     }
     return $validated;
+}
+//read in the csv file and process the data.
+function getData($filname){
+    echo "Reading now the data: " . $filename;
 }
 function printHelp(){
     echo "\n";
