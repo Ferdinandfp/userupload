@@ -1,8 +1,17 @@
-Notes of initial thoughts, outlay and workfow of the task.
+Notes of initial thoughts, outlay and workflow of the task.
 1. Process the arguments list - directives => continue/stop, process according the arguments provided.
-2. Read and process the csv file, format data. funtion getData(); (Possibly process data splitting into valid and invalid records, e.g. invalid email format, ready for STDout or database insert)
-3. Connect to database and create table. functions connectDB(Dbname, user, pasword, host); createTable(tablename);
+2. Read and process the csv file, format data. function getData(); (Possibly process data splitting into valid and invalid records, e.g. invalid email format, ready for STDout or database insert)
+3. Connect to database and create table. functions connect to DB, create table.
 4. Insert records into the DB table "users". inserUsers(users);
 5. Display invalid records.
 
-I have made the desition to add another directive/argument for the database name. This means any database can be used without having to change the source code before running the script.
+I have made the decision to add another directive/argument for the database name. 
+This means any database can be used without having to change the source code before running the script.
+This directive is -d.
+
+The database table name can not be changed without editing the script and is "users' according the document.
+The csv file must contain a header with the column names, this header will be ignored, including the header names. 
+The script  will only process the first 3 columns. Any other column after the third will also be ignored.
+
+Coded this script procedual. Added only the functionality as outlined in the document. 
+This should be sufficient information to get to know the coding style/format and logic implemented.

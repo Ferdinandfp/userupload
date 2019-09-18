@@ -94,14 +94,13 @@ if(array_key_exists(OPTIONFILE, $options)){
     $fileName = $options[OPTIONFILE];
 }
 if(validateUserDetails($dbUser, $dbPassword, $dbHost) && !empty($fileName)){
-    getData($fileName);
+    $userResults = getData($fileName);
+    echo $userResults[0];
+    updateUsers($userResults, $dbName, $dbUser, $dbPassword, $dbHost);
 }
-
-
 //--Funtions------------------------------------------------------------------------
 //Check if a specific table exits and rebuilt the table if required
 function createUsersTable($dbname, $username, $password, $hostname){
-    //
     if(validateUserDetails($username, $password, $hostname)){
         createTable($dbname, $username, $password, $hostname);
     }
@@ -121,7 +120,6 @@ function createTable($dbname, $tablename, $username, $password, $hostname){
             email VARCHAR(50) UNIQUE,
             reg_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )";
-            
             if (mysqli_query($dbConnection, $sql)) {
                 echo "Table " .$tablename . " created successfully.";
             } else {
@@ -140,12 +138,43 @@ function createTable($dbname, $tablename, $username, $password, $hostname){
                     if (mysqli_query($dbConnection, $sql_drop_table)) {
                         //success
                         echo "The table has been rebuild. ";
+                        if (mysqli_query($dbConnection, $sql)) {
+                            echo "Table " .$tablename . " created successfully.";
+                        } else {
+                            echo "Error creating table: " . mysqli_error($dbConnection);
+                            exit(1);
+                        }
                     }else{
                         echo "Something went wrong, could not drop table. ";
                     }
                 }
             }
     }
+    mysqli_close($dbConnection);
+}
+//Insert the user records into the data-base
+function updateUsers($userRecords, $dbname, $username, $password, $hostname){
+    //If the email is already in the system the record will be rejected - email unique value
+    $duplicateRedordFound = false;
+    $dbConnection = mysqli_connect($hostname, $username, $password, $dbname);
+    if (!$dbConnection) {
+        die("Connection failed: " . mysqli_connect_error());
+        return false;
+    }else{
+        $duplicateRecords = "Following user(s) could not be added to the Database\nDuplicate email address:\n";
+        foreach($userRecords as $record){
+            $sql = "INSERT INTO users (firstname, surname, email) VALUES $record";
+            if (mysqli_query($dbConnection, $sql)) {
+                //New record created successfully;
+            } else {
+                //Error: was not possible to add this record - dupicate email address;
+                $duplicateRecords = $duplicateRecords . $record . "\n";
+                $duplicateRedordFound = true;
+            }
+        }
+    }
+    //Print out the list of duplicate records
+    if($duplicateRedordFound)echo $duplicateRecords;
     mysqli_close($dbConnection);
 }
 //Validate the db user details input
@@ -168,13 +197,16 @@ function getData($filename){
         $scvData[0] = chop($scvData[0]);
         $countRow = count($scvData);
         $countCol = count($scvData[0]);
+        $dbrecordsarray = array();
         for($a=1; $a<$countRow; $a++) {
             $firstname = addslashes(trim(ucfirst(strtolower($scvData[$a][0]))));
             $lastname = addslashes(trim(ucfirst(strtolower($scvData[$a][1]))));
             $email = addslashes(trim(strtolower($scvData[$a][2])));
             $email = addslashes(filter_var($email, FILTER_SANITIZE_EMAIL));
             if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $dbrecords = $dbrecords . "('" . $firstname . "', '" . $lastname . "', '" . $email . "'),";
+                //$dbrecords = $dbrecords . "('" . $firstname . "', '" . $lastname . "', '" . $email . "'),";
+                $record = "('" . $firstname . "', '" . $lastname . "', '" . $email . "')";
+                array_push($dbrecordsarray, $record);
             } else {
                 $dbrejets = $dbrejets . $firstname . "," . $lastname . "," . $email . "\r\n";
             }
@@ -183,9 +215,12 @@ function getData($filename){
         echo "Please provide a valid file name and path. \nThe file could not be found or could not open the file.";
     }
     fclose($scvData);
-    echo "\nEnd of getData.\n\n";
-    echo "Records: " . $dbrecords;
-    echo "\n\nRejets: " . $dbrejets;
+    //echo "\nEnd of getData.\n\n";
+    //echo "Records: " . $dbrecordsarray[1];
+    echo "\n\nFollowing records were rejeted - invalid emal format:\n" . $dbrejets;
+    //Insert the valid user records into the database
+    //$dbrecords = substr($dbrecords, 0, -1);
+    return $dbrecordsarray;
 }
 //initial process of the user data to put all data into arrays.
 function processCsv($url) {
