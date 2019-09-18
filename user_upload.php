@@ -95,8 +95,7 @@ if(array_key_exists(OPTIONFILE, $options)){
 }
 if(validateUserDetails($dbUser, $dbPassword, $dbHost) && !empty($fileName)){
     $userResults = getData($fileName);
-    echo $userResults[0];
-    updateUsers($userResults, $dbName, $dbUser, $dbPassword, $dbHost);
+    updateUsers($userResults, $dbName, $dbUser, $dbPassword, $dbHost, $tableName);
 }
 //--Funtions------------------------------------------------------------------------
 //Check if a specific table exits and rebuilt the table if required
@@ -121,7 +120,7 @@ function createTable($dbname, $tablename, $username, $password, $hostname){
             reg_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )";
             if (mysqli_query($dbConnection, $sql)) {
-                echo "Table " .$tablename . " created successfully.";
+                echo "\nTable " .$tablename . " created successfully.\n";
             } else {
                 echo "Error creating table: " . mysqli_error($dbConnection);
                 if(mysqli_errno($dbConnection) == 1050){
@@ -153,19 +152,37 @@ function createTable($dbname, $tablename, $username, $password, $hostname){
     mysqli_close($dbConnection);
 }
 //Insert the user records into the data-base
-function updateUsers($userRecords, $dbname, $username, $password, $hostname){
+function updateUsers($userRecords, $dbname, $username, $password, $hostname, $tablename){
     //If the email is already in the system the record will be rejected - email unique value
     $duplicateRedordFound = false;
+    $successRecordCount = 0;
+    $successMessage = "record has";
     $dbConnection = mysqli_connect($hostname, $username, $password, $dbname);
     if (!$dbConnection) {
         die("Connection failed: " . mysqli_connect_error());
         return false;
     }else{
-        $duplicateRecords = "Following user(s) could not be added to the Database\nDuplicate email address:\n";
+        //Check if a table exists
+        $exists = mysqli_query($dbConnection, "SELECT 1 from users");
+        if(!$exists){
+            echo("\nThe table 'users' doesn't exist.");
+            echo "\nWould you like to create the table?\n";
+            echo "Type 'y' to create the table: \n";
+            $handle = fopen ("php://stdin","r");
+            $line = fgets($handle);
+            if(trim($line) != 'y'){
+                echo "\nAborting creating the table!\nNo data has been added to the database.";
+                exit(1);
+            }else{
+                createTable($dbname, $tablename, $username, $password, $hostname);
+            }
+        }
+        $duplicateRecords = "\n\nFollowing users could not be added to the Database\nDuplicate email address:\n";
         foreach($userRecords as $record){
             $sql = "INSERT INTO users (firstname, surname, email) VALUES $record";
             if (mysqli_query($dbConnection, $sql)) {
                 //New record created successfully;
+                $successRecordCount++;
             } else {
                 //Error: was not possible to add this record - dupicate email address;
                 $duplicateRecords = $duplicateRecords . $record . "\n";
@@ -174,6 +191,8 @@ function updateUsers($userRecords, $dbname, $username, $password, $hostname){
         }
     }
     //Print out the list of duplicate records
+    if($successRecordCount > 1 )$successMessage = "records have";
+    if($successRecordCount > 0)echo "\n" . $successRecordCount . " " . $successMessage . " been added to the database";
     if($duplicateRedordFound)echo $duplicateRecords;
     mysqli_close($dbConnection);
 }
