@@ -3,7 +3,8 @@ Notes of initial thoughts, outlay and workflow of the task.
 2. Read and process the csv file, format data. function getData(); (Possibly process data splitting into valid and invalid records, e.g. invalid email format, ready for STDout or database insert)
 3. Connect to database and create table. functions connect to DB, create table.
 4. Insert records into the DB table "users". inserUsers(users);
-5. Display invalid records.
+5. Implement the test feature - dry_run
+6. Display invalid records.
 
 I have made the decision to add another directive/argument for the database name. 
 This means any database can be used without having to change the source code before running the script.
@@ -11,7 +12,16 @@ This directive is -d.
 
 The database table name can not be changed without editing the script and is "users' according the document.
 The csv file must contain a header with the column names, this header will be ignored, including the header names. 
-The script  will only process the first 3 columns. Any other column after the third will also be ignored.
+The script  will only process the first 3 columns. Any other column after the third will also be ignored. The
+column names will be firstname, surname and email. There are two additional table columns, id as the primary 
+key and a date column with the registration time stamp.
 
 Coded this script procedual. Added only the functionality as outlined in the document. 
 This should be sufficient information to get to know the coding style/format and logic implemented.
+Directives --create_table: The table with the name 'users' will be created, if the table exists
+an option will let you rebuild the table loosing all data or abort the table creation. If the optiona
+--create_table is used together with the --file directive and the table creation/rebuild is aborted no data 
+will be inserted into the database.
+Directive --file: If the 'users' table does not exist and the --create_table directive is not used the user
+will be informend that the table does not exist and the option is provided to create it. If no, the table will
+not be created and no users are inserted into the database.
